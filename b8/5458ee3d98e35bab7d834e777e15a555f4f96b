@@ -1,0 +1,28 @@
+src/app/api/ocr/route.ts
+  h_fed6a40af368f7 2,80,99,110,118,147,175-178,190,194
+src/app/api/rooms/[code]/claims/route.ts
+  h_fed6a40af368f7 5,62,90-95,145
+src/app/api/rooms/[code]/participants/route.ts
+  h_fed6a40af368f7 7,118,149,182
+src/app/api/rooms/route.ts
+  h_fed6a40af368f7 4,30-33,35,43
+src/lib/ai/analyzeTicket.ts
+  h_fed6a40af368f7 8,25-27,30-34,38-45,50-59,66,76-79,93,112,136,159-170,176,179-182,408
+src/lib/logger.ts
+  h_fed6a40af368f7 1-23
+src/lib/ocr/scan.ts
+  h_fed6a40af368f7 8,42,45,62-67,86,90-95
+src/lib/rooms/store.ts
+  h_fed6a40af368f7 8,235,250-253
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "b85458ee3d98e35bab7d834e777e15a555f4f96b",
+  "prompts": {},
+  "humans": {
+    "h_fed6a40af368f7": {
+      "author": "Alberto Hernández Lado <albertohljob@gmail.com>"
+    }
+  }
+}

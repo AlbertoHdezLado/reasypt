@@ -5,6 +5,7 @@ import {
   roomChannelName,
 } from "@/lib/supabase/channels";
 import { EMPTY_EXTRAS } from "@/lib/receipt/editable";
+import { logger } from "@/lib/logger";
 import { normalizeRoomCode } from "./code";
 import type { RoomEvent, RoomState } from "./types";
 
@@ -231,7 +232,7 @@ export async function appendRoomEvent(
   });
 
   if (!error || isMissingEventsSchemaError(error)) return;
-  console.warn("Could not persist room event", error);
+  logger.warn("room_event_persist_failed", { error: error.message, kind: event.kind });
 }
 
 /**
@@ -246,7 +247,10 @@ export async function broadcastRoomUpdate(
   try {
     await channel.httpSend(ROOM_UPDATED_EVENT, {});
   } catch (error) {
-    console.warn("Could not broadcast room update", error);
+    logger.warn("room_broadcast_failed", {
+      code,
+      error: error instanceof Error ? error.message : String(error),
+    });
   } finally {
     await supabase.removeChannel(channel);
   }

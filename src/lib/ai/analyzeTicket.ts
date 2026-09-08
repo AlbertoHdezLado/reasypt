@@ -5,6 +5,7 @@
 
 import { recognizeWithTesseract } from "@/lib/ocr/tesseract";
 import { parseReceipt } from "@/lib/receipt/parser";
+import { logger } from "@/lib/logger";
 import type { OcrWord } from "@/lib/ocr/types";
 import type { FallbackReason, TicketAnalysisItem, TicketAnalysisResult } from "./types";
 
@@ -21,23 +22,48 @@ export function aiIsAvailable(): boolean {
 export async function analyzeTicket(
   imageBuffer: Buffer,
 ): Promise<TicketAnalysisResult> {
+  const startedAt = Date.now();
+  logger.info("ticket_analysis_start", { imageBytes: imageBuffer.length });
+
   const ocr = await recognizeWithTesseract(imageBuffer);
   const rawText = ocr.text;
+  logger.debug("ticket_analysis_ocr_done", {
+    words: ocr.words.length,
+    rawTextLength: rawText.length,
+    durationMs: Date.now() - startedAt,
+  });
 
   if (aiIsAvailable()) {
     const aiResult = await tryAiAnalysis(rawText);
-    if (aiResult) return aiResult;
+    if (aiResult) {
+      logger.info("ticket_analysis_done", {
+        source: aiResult.source,
+        items: aiResult.items.length,
+        durationMs: Date.now() - startedAt,
+      });
+      return aiResult;
+    }
   } else {
     logFallback("ai_unavailable");
   }
 
-  return parseWithRegex(rawText, ocr.words.length > 0 ? ocr.words : undefined);
+  const fallbackResult = parseWithRegex(
+    rawText,
+    ocr.words.length > 0 ? ocr.words : undefined,
+  );
+  logger.info("ticket_analysis_done", {
+    source: fallbackResult.source,
+    items: fallbackResult.items.length,
+    durationMs: Date.now() - startedAt,
+  });
+  return fallbackResult;
 }
 
 /** Runs the AI path end to end; returns null (after logging) if it should fall back to OCR. */
 async function tryAiAnalysis(
   rawText: string,
 ): Promise<TicketAnalysisResult | null> {
+  logger.debug("ticket_analysis_ai_attempt", { model: AI_MODEL });
   const first = await callAiWithRetry(buildPrompt(rawText));
   if (!first.ok) {
     logFallback(first.reason);
@@ -47,7 +73,10 @@ async function tryAiAnalysis(
   const parsed = parseAiJson(first.text);
   if (parsed.ok) {
     const validated = validateAiPayload(parsed.data);
-    if (validated.ok) return toUnifiedResult(validated.data, "ai");
+    if (validated.ok) {
+      logger.debug("ticket_analysis_ai_success", { items: validated.data.items.length });
+      return toUnifiedResult(validated.data, "ai");
+    }
     logFallback(validated.reason, { stage: "repair" });
     return repairAndValidate(rawText, first.text);
   }
@@ -61,6 +90,7 @@ async function repairAndValidate(
   rawText: string,
   invalidOutput: string,
 ): Promise<TicketAnalysisResult | null> {
+  logger.debug("ticket_analysis_ai_repair_attempt");
   const repair = await callAiWithRetry(buildRepairPrompt(rawText, invalidOutput));
   if (!repair.ok) {
     logFallback(repair.reason, { stage: "repair" });
@@ -79,6 +109,7 @@ async function repairAndValidate(
     return null;
   }
 
+  logger.debug("ticket_analysis_ai_repair_success", { items: validated.data.items.length });
   return toUnifiedResult(validated.data, "ai");
 }
 
@@ -102,6 +133,7 @@ const TRANSIENT_REASONS = new Set<FallbackReason>([
 async function callAiWithRetry(prompt: string): Promise<AiCallResult> {
   const attempt1 = await callAiOnce(prompt);
   if (attempt1.ok || !TRANSIENT_REASONS.has(attempt1.reason)) return attempt1;
+  logger.debug("ticket_analysis_ai_retry", { reason: attempt1.reason });
   return callAiOnce(prompt);
 }
 
@@ -124,16 +156,30 @@ async function callAiOnce(prompt: string): Promise<AiCallResult> {
       signal: controller.signal,
     });
 
-    if (response.status === 429) return { ok: false, reason: "rate_limit" };
-    if (response.status >= 500) return { ok: false, reason: "server_error" };
-    if (!response.ok) return { ok: false, reason: "server_error" };
+    if (response.status === 429) {
+      logger.warn("ticket_analysis_ai_call_failed", { status: response.status, reason: "rate_limit" });
+      return { ok: false, reason: "rate_limit" };
+    }
+    if (response.status >= 500) {
+      logger.warn("ticket_analysis_ai_call_failed", { status: response.status, reason: "server_error" });
+      return { ok: false, reason: "server_error" };
+    }
+    if (!response.ok) {
+      logger.warn("ticket_analysis_ai_call_failed", { status: response.status, reason: "server_error" });
+      return { ok: false, reason: "server_error" };
+    }
 
     const text = await extractAiText(response);
     return { ok: true, text };
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
+      logger.warn("ticket_analysis_ai_call_failed", { reason: "timeout" });
       return { ok: false, reason: "timeout" };
     }
+    logger.error("ticket_analysis_ai_call_failed", {
+      reason: "network_error",
+      error: error instanceof Error ? error.message : String(error),
+    });
     return { ok: false, reason: "network_error" };
   } finally {
     clearTimeout(timer);
@@ -359,11 +405,5 @@ function logFallback(
   reason: FallbackReason,
   context?: Record<string, unknown>,
 ): void {
-  console.warn(
-    JSON.stringify({
-      event: "ticket_analysis_fallback",
-      reason,
-      ...context,
-    }),
-  );
+  logger.warn("ticket_analysis_fallback", { reason, ...context });
 }

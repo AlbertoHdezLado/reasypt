@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isValidRoomCode } from "@/lib/rooms/code";
 import { saveClaimRows } from "@/lib/rooms/claims-write";
+import { logger } from "@/lib/logger";
 import {
   appendRoomEvent,
   broadcastRoomUpdate,
@@ -58,6 +59,7 @@ export async function PUT(
   const supabase = createServiceClient();
   const room = await findRoom(supabase, code);
   if (!room) {
+    logger.warn("claim_room_not_found", { code });
     return NextResponse.json({ error: "Room not found" }, { status: 404 });
   }
 
@@ -85,7 +87,12 @@ export async function PUT(
       shared,
       allParticipants,
     });
-  } catch {
+  } catch (error) {
+    logger.error("claim_save_failed", {
+      code,
+      itemId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: "Could not save" }, { status: 500 });
   }
 
@@ -135,6 +142,7 @@ export async function PUT(
     peopleCount: units === null ? null : participantIds.length,
   });
 
+  logger.info("claim_updated", { code, itemId, kind, units });
   await broadcastRoomUpdate(supabase, code);
   return NextResponse.json(await loadRoomState(supabase, room));
 }

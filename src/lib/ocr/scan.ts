@@ -5,6 +5,7 @@ import {
   type OcrProvider,
 } from "@/lib/ocr";
 import { parseReceipt } from "@/lib/receipt/parser";
+import { logger } from "@/lib/logger";
 import {
   newItemId,
   type EditableExtras,
@@ -38,8 +39,10 @@ export async function scanReceipt(
   file: File,
   onStage: (stage: ScanStage, progress: number) => void,
 ): Promise<ScanOutcome> {
+  const startedAt = Date.now();
   onStage("preprocessing", 0);
   const provider = getOcrProvider();
+  logger.info("scan_receipt_start", { provider: provider.id, fileBytes: file.size });
   const variants: ReceiptImageVariant[] = ["contrast", "threshold"];
   const parsedResults: { receipt: ParsedReceipt; confidence: number }[] = [];
 
@@ -56,6 +59,12 @@ export async function scanReceipt(
         ? 0
         : result.words.reduce((sum, word) => sum + word.confidence, 0) /
           result.words.length;
+    logger.debug("scan_receipt_pass_done", {
+      pass,
+      variant: variants[pass],
+      words: result.words.length,
+      confidence,
+    });
     parsedResults.push({
       receipt: parseReceipt(result.words),
       confidence,
@@ -74,8 +83,15 @@ export async function scanReceipt(
   // Nothing usable was found on any pass: OCR itself worked, the photo just
   // didn't contain readable text (blur, glare, wrong crop…).
   if (parsed.items.length === 0 && parsed.detectedTotalCents === null) {
+    logger.warn("scan_receipt_low_quality", { durationMs: Date.now() - startedAt });
     throw new LowQualityScanError();
   }
+
+  logger.info("scan_receipt_done", {
+    items: parsed.items.length,
+    mismatch: parsed.mismatch,
+    durationMs: Date.now() - startedAt,
+  });
 
   return {
     items: parsed.items.map((item) => ({

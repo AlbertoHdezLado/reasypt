@@ -4,6 +4,7 @@ import { isValidRoomCode } from "@/lib/rooms/code";
 import { saveClaimRows } from "@/lib/rooms/claims-write";
 import { broadcastRoomUpdate, findRoom, loadRoomState } from "@/lib/rooms/store";
 import { MAX_PARTICIPANT_NAME_LENGTH } from "@/lib/input-limits";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
@@ -114,6 +115,7 @@ export async function POST(
     return NextResponse.json({ error: "Could not save" }, { status: 500 });
   }
 
+  logger.info("participant_joined", { code, participantId: participant.id });
   await broadcastRoomUpdate(supabase, code);
   return NextResponse.json(await loadRoomState(supabase, room));
 }
@@ -144,6 +146,7 @@ export async function PATCH(
   const supabase = createServiceClient();
   const room = await findRoom(supabase, code);
   if (!room) {
+    logger.warn("participant_rename_room_not_found", { code });
     return NextResponse.json({ error: "Room not found" }, { status: 404 });
   }
 
@@ -176,6 +179,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Could not save" }, { status: 500 });
   }
 
+  logger.info("participant_renamed", { code, participantId });
   await broadcastRoomUpdate(supabase, code);
   return NextResponse.json(await loadRoomState(supabase, room));
 }

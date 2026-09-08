@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { generateRoomCode } from "@/lib/rooms/code";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
@@ -26,8 +27,12 @@ export async function POST(request: Request) {
       .select("code")
       .maybeSingle<{ code: string }>();
 
-    if (!error && data) return NextResponse.json({ code: data.code });
+    if (!error && data) {
+      logger.info("room_created", { code: data.code, attempt });
+      return NextResponse.json({ code: data.code });
+    }
     if (error?.code !== "23505") {
+      logger.error("room_create_failed", { error: error?.message });
       return NextResponse.json(
         { error: "Could not create the room" },
         { status: 500 },
@@ -35,6 +40,7 @@ export async function POST(request: Request) {
     }
   }
 
+  logger.error("room_create_exhausted_attempts", { attempts: MAX_CODE_ATTEMPTS });
   return NextResponse.json(
     { error: "Could not create the room" },
     { status: 503 },

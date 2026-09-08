@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 import type { OcrResult, OcrWord } from "@/lib/ocr/types";
 
 export const runtime = "nodejs";
@@ -76,6 +77,7 @@ export async function POST(request: Request) {
   const bytes = Buffer.from(await image.arrayBuffer());
   const base64 = bytes.toString("base64");
 
+  logger.info("ocr_vision_request", { imageBytes: bytes.length });
   const visionResponse = await fetch(
     `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
     {
@@ -94,6 +96,7 @@ export async function POST(request: Request) {
   );
 
   if (!visionResponse.ok) {
+    logger.error("ocr_vision_request_failed", { status: visionResponse.status });
     return NextResponse.json(
       { error: `Google Vision request failed (${visionResponse.status})` },
       { status: 502 },
@@ -104,6 +107,7 @@ export async function POST(request: Request) {
   const annotation = payload.responses?.[0];
 
   if (annotation?.error) {
+    logger.error("ocr_vision_response_error", { message: annotation.error.message });
     return NextResponse.json(
       { error: annotation.error.message ?? "Google Vision error" },
       { status: 502 },
@@ -111,6 +115,7 @@ export async function POST(request: Request) {
   }
 
   const result = toOcrResult(annotation?.fullTextAnnotation);
+  logger.info("ocr_vision_success", { words: result.words.length });
   return NextResponse.json(result);
 }
 
@@ -139,6 +144,7 @@ async function recognizeWithGemini(request: Request) {
   }
 
   const base64 = Buffer.from(await image.arrayBuffer()).toString("base64");
+  logger.info("ocr_gemini_request", { imageBytes: image.size });
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_MODEL ?? "gemini-3.6-flash"}:generateContent?key=${apiKey}`,
     {
@@ -166,6 +172,10 @@ async function recognizeWithGemini(request: Request) {
 
   const payload = (await response.json().catch(() => null)) as GeminiResponse | null;
   if (!response.ok || payload?.error) {
+    logger.error("ocr_gemini_request_failed", {
+      status: response.status,
+      message: payload?.error?.message,
+    });
     return NextResponse.json(
       { error: payload?.error?.message ?? `Gemini request failed (${response.status})` },
       { status: 502 },
@@ -177,9 +187,11 @@ async function recognizeWithGemini(request: Request) {
     .join("")
     .trim();
   if (!text) {
+    logger.error("ocr_gemini_empty_response");
     return NextResponse.json({ error: "Gemini returned no text" }, { status: 502 });
   }
 
+  logger.info("ocr_gemini_success", { textLength: text.length });
   return NextResponse.json(textToOcrResult(text));
 }
 

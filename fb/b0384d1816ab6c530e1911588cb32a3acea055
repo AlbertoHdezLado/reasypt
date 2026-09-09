@@ -1,0 +1,16 @@
+src/lib/ocr/preprocess.ts
+  h_fed6a40af368f7 4-5,18-19,21-23,34-35
+src/lib/receipt/image.ts
+  h_fed6a40af368f7 7-50,52-56,63-64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "fbb0384d1816ab6c530e1911588cb32a3acea055",
+  "prompts": {},
+  "humans": {
+    "h_fed6a40af368f7": {
+      "author": "Alberto Hernández Lado <albertohljob@gmail.com>"
+    }
+  }
+}

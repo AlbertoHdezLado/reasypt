@@ -1,6 +1,8 @@
 // Canvas preprocessing applied before OCR: this is what moves Tesseract's
 // accuracy the most on phone photos of receipts (resize, grayscale, contrast).
 
+import { loadDrawableImage } from "@/lib/receipt/image";
+
 const TARGET_WIDTH = 1600;
 
 export type ReceiptImageVariant = "contrast" | "threshold";
@@ -13,11 +15,12 @@ export async function preprocessReceiptImage(
   file: File | Blob,
   variant: ReceiptImageVariant = "contrast",
 ): Promise<Blob> {
-  const bitmap = await createImageBitmap(file);
+  const { source, width: sourceWidth, height: sourceHeight, close } =
+    await loadDrawableImage(file);
 
-  const scale = Math.min(1, TARGET_WIDTH / bitmap.width);
-  const width = Math.round(bitmap.width * scale);
-  const height = Math.round(bitmap.height * scale);
+  const scale = Math.min(1, TARGET_WIDTH / sourceWidth);
+  const width = Math.round(sourceWidth * scale);
+  const height = Math.round(sourceHeight * scale);
 
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -28,7 +31,8 @@ export async function preprocessReceiptImage(
     throw new Error("2D canvas context is not available in this environment");
   }
 
-  ctx.drawImage(bitmap, 0, 0, width, height);
+  ctx.drawImage(source, 0, 0, width, height);
+  close();
 
   const imageData = ctx.getImageData(0, 0, width, height);
   grayscaleAndStretchContrast(imageData);

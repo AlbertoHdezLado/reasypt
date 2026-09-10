@@ -105,11 +105,11 @@ export function RoomHome({ messages, captureMessages }: RoomHomeProps) {
             },
       );
     }, 4000);
-    void fileToPreviewDataUrl(file)
+    const receiptImageReady = fileToPreviewDataUrl(file)
       .then(setPendingReceiptImage)
       .catch(() => {});
     void scanReceipt(file, () => {})
-      .then((outcome: ScanOutcome) => {
+      .then(async (outcome: ScanOutcome) => {
         stopFakeProgress();
         setScan((current) =>
           current === null ? current : { ...current, progress: 100 },
@@ -119,6 +119,7 @@ export function RoomHome({ messages, captureMessages }: RoomHomeProps) {
           setCreateMode("tesseract");
           return;
         }
+        await receiptImageReady;
         start(outcome);
       })
       .catch(() => {

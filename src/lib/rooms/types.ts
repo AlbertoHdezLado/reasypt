@@ -34,6 +34,7 @@ export interface RoomEvent {
 
 export interface RoomState {
   readonly code: string;
+  readonly receiptImageUrl: string | null;
   readonly participants: RoomParticipant[];
   readonly items: EditableItem[];
   readonly extras: EditableExtras;

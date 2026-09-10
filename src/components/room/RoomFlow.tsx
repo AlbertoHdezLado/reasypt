@@ -15,6 +15,7 @@ import {
   renameParticipant,
   saveBill,
   saveClaim,
+  uploadReceiptImage,
 } from "@/lib/rooms/api";
 import {
   takePendingCapture,
@@ -46,11 +47,6 @@ function identityStorageKey(code: string): string {
   return `reasypt.identity.${code}`;
 }
 
-/** Compressed copy of the scanned photo, kept only on the device that captured it. */
-function receiptImageStorageKey(code: string): string {
-  return `reasypt.receiptImage.${code}`;
-}
-
 export function RoomFlow({ code, messages }: RoomFlowProps) {
   const t = messages.room;
   const router = useRouter();
@@ -67,7 +63,6 @@ export function RoomFlow({ code, messages }: RoomFlowProps) {
     extras: EditableExtras;
   } | null>(null);
   const [showShare, setShowShare] = useState(false);
-  const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const pendingName = useRef<string | null>(null);
   const hasAutoSavedDraft = useRef(false);
   const [showBulkAdd, setShowBulkAdd] = useState(false);
@@ -79,9 +74,9 @@ export function RoomFlow({ code, messages }: RoomFlowProps) {
     const pending = takePendingCapture();
     const pendingImage = takePendingReceiptImage();
     if (pendingImage) {
-      window.localStorage.setItem(receiptImageStorageKey(code), pendingImage);
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- traspaso puntual al montar
-      setReceiptImage(pendingImage);
+      void uploadReceiptImage(code, pendingImage)
+        .then(setRoom)
+        .catch(() => setActionError(t.saveError));
     }
     if (!pending) return;
 
@@ -121,10 +116,6 @@ export function RoomFlow({ code, messages }: RoomFlowProps) {
     const stored = window.localStorage.getItem(identityStorageKey(code));
     // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura puntual al montar
     if (stored) setSelfId(stored);
-    const storedImage = window.localStorage.getItem(
-      receiptImageStorageKey(code),
-    );
-    if (storedImage) setReceiptImage(storedImage);
   }, [code]);
 
   // Auto-save scanned receipts once the room is loaded
@@ -339,11 +330,9 @@ export function RoomFlow({ code, messages }: RoomFlowProps) {
             messages={messages.capture}
             onScanned={(items, extras) => setDraft({ items, extras })}
             onImageCaptured={(dataUrl) => {
-              window.localStorage.setItem(
-                receiptImageStorageKey(code),
-                dataUrl,
-              );
-              setReceiptImage(dataUrl);
+              void uploadReceiptImage(code, dataUrl)
+                .then(setRoom)
+                .catch(() => setActionError(t.saveError));
             }}
           />
         </div>
@@ -431,7 +420,7 @@ export function RoomFlow({ code, messages }: RoomFlowProps) {
         roomCode={room.code}
         onToggleShare={() => setShowShare((prev) => !prev)}
         isOwner={self.isOwner}
-        receiptImageUrl={receiptImage}
+        receiptImageUrl={room.receiptImageUrl}
         onRenameSelf={(name) =>
           renameParticipant(code, self.id, name).then((next) => {
             setRoom(next);

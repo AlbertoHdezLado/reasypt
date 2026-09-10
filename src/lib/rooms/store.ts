@@ -19,6 +19,7 @@ interface RoomRow {
   detected_total_cents: number | null;
   merchant_name?: string | null;
   receipt_header?: string[] | null;
+  receipt_image_url?: string | null;
 }
 
 interface ClaimRow {
@@ -47,7 +48,7 @@ function isMissingColumnError(error: { code?: string; message?: string } | null)
     // 42703: Postgres undefined_column. PGRST204: PostgREST's schema cache
     // hasn't picked up the column yet (e.g. right after a migration).
     (error?.code === "42703" || error?.code === "PGRST204") &&
-    /(merchant_name|receipt_header|group_key|shared|all_participants)/.test(
+    /(merchant_name|receipt_header|receipt_image_url|group_key|shared|all_participants)/.test(
       error.message ?? "",
     )
   );
@@ -77,7 +78,7 @@ export async function findRoom(
       .from("rooms")
       .select(
         includeHeader
-          ? "id, code, tax_cents, tip_cents, service_cents, discount_cents, detected_total_cents, merchant_name, receipt_header"
+          ? "id, code, tax_cents, tip_cents, service_cents, discount_cents, detected_total_cents, merchant_name, receipt_header, receipt_image_url"
           : "id, code, tax_cents, tip_cents, service_cents, discount_cents, detected_total_cents",
       )
       .eq("code", normalizedCode)
@@ -94,6 +95,7 @@ export async function findRoom(
       ...fallback.data,
       merchant_name: fallback.data?.merchant_name ?? "",
       receipt_header: [],
+      receipt_image_url: null,
     };
   }
 
@@ -156,6 +158,7 @@ export async function loadRoomState(
 
   return {
     code: room.code,
+    receiptImageUrl: room.receipt_image_url ?? null,
     participants: (participants.data ?? []).map((row) => ({
       id: row.id as string,
       name: row.name as string,

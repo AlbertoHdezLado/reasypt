@@ -45,6 +45,22 @@ export async function saveBill(
   );
 }
 
+export async function uploadReceiptImage(
+  code: string,
+  dataUrl: string,
+): Promise<RoomState> {
+  const response = await fetch(dataUrl);
+  const image = await response.blob();
+  const body = new FormData();
+  body.append("image", image, "receipt.jpg");
+  return readState(
+    await fetch(`/api/rooms/${normalizeRoomCode(code)}/receipt-image`, {
+      method: "POST",
+      body,
+    }),
+  );
+}
+
 export async function addParticipant(
   code: string,
   name: string,

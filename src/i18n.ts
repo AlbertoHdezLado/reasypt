@@ -76,6 +76,8 @@ export const messages = {
       readReceiptError: "Error al leer el ticket",
       lowQualityScanError:
         "No se ha podido leer el ticket. Vuelve a hacer la foto con mejor luz y enfoque.",
+      unsupportedImageFormatError:
+        "Este formato de imagen no es compatible. Prueba a hacer la foto de nuevo o a elegir otra de la galería.",
       shareTitle: "Cuenta de reasypt",
       resetToStartLabel: "Volver al inicio",
       closeLabel: "Cerrar",
@@ -322,6 +324,8 @@ export const messages = {
       readReceiptError: "Could not read the receipt",
       lowQualityScanError:
         "Couldn't read the receipt. Retake the photo with better light and focus.",
+      unsupportedImageFormatError:
+        "This image format isn't supported. Try retaking the photo or choosing another one from the gallery.",
       shareTitle: "reasypt split",
       resetToStartLabel: "Back to start",
       closeLabel: "Close",

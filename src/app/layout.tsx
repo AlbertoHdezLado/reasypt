@@ -3,6 +3,7 @@ import { JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { MotionProvider } from "@/components/MotionProvider";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { ViewportZoomLock } from "@/components/ViewportZoomLock";
 import { getRequestLocale, getRequestMessages } from "@/lib/server-locale";
 import "./globals.css";
 
@@ -57,6 +58,7 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ServiceWorkerRegister />
+        <ViewportZoomLock />
         <OfflineBanner message={messages.room.offline} />
         <MotionProvider>{children}</MotionProvider>
       </body>

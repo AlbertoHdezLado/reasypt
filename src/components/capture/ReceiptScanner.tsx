@@ -9,7 +9,7 @@ import {
   type EditableExtras,
   type EditableItem,
 } from "@/lib/receipt/editable";
-import { fileToPreviewDataUrl } from "@/lib/receipt/image";
+import { fileToPreviewDataUrl, UnsupportedImageFormatError } from "@/lib/receipt/image";
 import { ScanOverlay } from "@/components/capture/ScanOverlay";
 import type { Messages } from "@/i18n";
 
@@ -108,10 +108,10 @@ export function ReceiptScanner({
       setScanning(false);
       if (err instanceof LowQualityScanError) {
         setScanError(messages.lowQualityScanError);
+      } else if (err instanceof UnsupportedImageFormatError) {
+        setScanError(messages.unsupportedImageFormatError);
       } else {
-        setScanError(
-          err instanceof Error ? err.message : messages.readReceiptError,
-        );
+        setScanError(messages.readReceiptError);
       }
     }
   }

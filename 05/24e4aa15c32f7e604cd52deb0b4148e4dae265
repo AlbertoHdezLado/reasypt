@@ -1,0 +1,18 @@
+src/components/room/RoomFlow.tsx
+  h_fed6a40af368f7 136
+src/components/room/SplitRoom.test.tsx
+  h_fed6a40af368f7 103-105,316-318,350-352
+src/i18n.ts
+  h_fed6a40af368f7 199
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "0524e4aa15c32f7e604cd52deb0b4148e4dae265",
+  "prompts": {},
+  "humans": {
+    "h_fed6a40af368f7": {
+      "author": "Alberto Hernández Lado <albertohljob@gmail.com>"
+    }
+  }
+}

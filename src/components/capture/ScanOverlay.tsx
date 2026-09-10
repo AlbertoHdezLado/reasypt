@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "motion/react";
+import { ImageIcon } from "lucide-react";
 import type { Messages } from "@/i18n";
 
 interface ScanOverlayProps {
@@ -17,6 +19,10 @@ export function ScanOverlay({
   previewUrl,
   messages,
 }: ScanOverlayProps) {
+  const [failedPreviewUrl, setFailedPreviewUrl] = useState<string | null>(null);
+
+  const showPreview = previewUrl !== null && failedPreviewUrl !== previewUrl;
+
   return (
     <div
       role="status"
@@ -31,15 +37,18 @@ export function ScanOverlay({
         className="flex w-full max-w-xs flex-col items-center gap-4 rounded-3xl border border-border bg-background p-6 text-center shadow-2xl"
       >
         <div className="relative w-32 overflow-hidden rounded-2xl border border-primary/40 bg-surface">
-          {previewUrl ? (
+          {showPreview ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={previewUrl}
               alt=""
+              onError={() => setFailedPreviewUrl(previewUrl)}
               className="h-40 w-full object-cover opacity-80"
             />
           ) : (
-            <div className="h-40 w-full" />
+            <div className="flex h-40 w-full items-center justify-center text-muted-foreground">
+              <ImageIcon aria-hidden="true" size={40} strokeWidth={1.75} />
+            </div>
           )}
           <div className="absolute inset-0">
             <div className="animate-receipt-scan absolute inset-x-0 h-0.5 bg-gold shadow-[0_0_12px_2px_var(--gold)]" />

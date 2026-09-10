@@ -41,7 +41,7 @@ export function RoomHome({ messages, captureMessages }: RoomHomeProps) {
   const [scan, setScan] = useState<{
     progress: number;
     messageIndex: number;
-    previewUrl: string;
+    previewUrl: string | null;
   } | null>(null);
   const busy = busyLabel !== null || scan !== null;
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -81,9 +81,8 @@ export function RoomHome({ messages, captureMessages }: RoomHomeProps) {
   }
 
   function scanAndStart(file: File) {
-    const previewUrl = URL.createObjectURL(file);
     setError(null);
-    setScan({ progress: 0, messageIndex: 0, previewUrl });
+    setScan({ progress: 0, messageIndex: 0, previewUrl: null });
     stopFakeProgress();
     // Simulated progress that always keeps moving, independent of the real
     // OCR timing, so it never looks stuck while waiting on the server/Gemini.
@@ -106,7 +105,12 @@ export function RoomHome({ messages, captureMessages }: RoomHomeProps) {
       );
     }, 4000);
     const receiptImageReady = fileToPreviewDataUrl(file)
-      .then(setPendingReceiptImage)
+      .then((previewUrl) => {
+        setPendingReceiptImage(previewUrl);
+        setScan((current) =>
+          current === null ? current : { ...current, previewUrl },
+        );
+      })
       .catch(() => {});
     void scanReceipt(file, () => {})
       .then(async (outcome: ScanOutcome) => {
@@ -129,7 +133,6 @@ export function RoomHome({ messages, captureMessages }: RoomHomeProps) {
       .finally(() => {
         stopFakeProgress();
         setScan(null);
-        URL.revokeObjectURL(previewUrl);
       });
   }
 

@@ -17,7 +17,7 @@ interface BillProgressProps {
   readonly totalItems: number;
   readonly onOpenTableBill: () => void;
   readonly onToggleShare: () => void;
-  readonly notifications?: ReactNode;
+  readonly onOpenAccounts?: () => void;
   readonly profile?: ReactNode;
   readonly messages: Messages["roomSplit"];
 }
@@ -29,7 +29,7 @@ export function BillProgress({
   totalItems,
   onOpenTableBill,
   onToggleShare,
-  notifications,
+  onOpenAccounts,
   profile,
   messages,
 }: BillProgressProps) {
@@ -61,7 +61,17 @@ export function BillProgress({
             <Share2 aria-hidden="true" size={16} />
           </button>
           {profile}
-          {notifications}
+          {onOpenAccounts && (
+            <button
+              type="button"
+              onClick={onOpenAccounts}
+              aria-label={messages.viewAccounts}
+              title={messages.viewAccounts}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary text-primary hover:bg-primary/10"
+            >
+              <Receipt aria-hidden="true" size={16} />
+            </button>
+          )}
         </div>
       </div>
 

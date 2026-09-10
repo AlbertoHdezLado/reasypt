@@ -4,7 +4,6 @@ import { isValidRoomCode } from "@/lib/rooms/code";
 import { saveClaimRows } from "@/lib/rooms/claims-write";
 import { logger } from "@/lib/logger";
 import {
-  appendRoomEvent,
   broadcastRoomUpdate,
   findRoom,
   loadRoomState,
@@ -63,18 +62,6 @@ export async function PUT(
     return NextResponse.json({ error: "Room not found" }, { status: 404 });
   }
 
-  // Se lee antes de escribir para poder distinguir, luego, si alguien entró o
-  // salió de un grupo ya existente en vez de reportarlo como un cambio genérico.
-  const { data: previousMemberRows } = await supabase
-    .from("claims")
-    .select("participant_id")
-    .eq("room_id", room.id)
-    .eq("item_id", itemId)
-    .eq("group_key", groupKey);
-  const previousMemberIds = new Set(
-    (previousMemberRows ?? []).map((row) => row.participant_id as string),
-  );
-
   try {
     await saveClaimRows(supabase, {
       roomId: room.id,
@@ -96,53 +83,7 @@ export async function PUT(
     return NextResponse.json({ error: "Could not save" }, { status: 500 });
   }
 
-  const { data: itemRow } = await supabase
-    .from("items")
-    .select("name")
-    .eq("id", itemId)
-    .maybeSingle<{ name: string | null }>();
-
-  const addedMembers = participantIds.filter(
-    (id) => !previousMemberIds.has(id),
-  );
-  const removedMembers = [...previousMemberIds].filter(
-    (id) => !participantIds.includes(id),
-  );
-
-  let kind: "group_changed" | "group_removed" | "member_joined" | "member_left";
-  let actorId: string | null;
-  if (units === null) {
-    kind = "group_removed";
-    actorId = ownerId;
-  } else if (
-    previousMemberIds.size > 0 &&
-    addedMembers.length === 1 &&
-    removedMembers.length === 0
-  ) {
-    kind = "member_joined";
-    actorId = addedMembers[0];
-  } else if (
-    previousMemberIds.size > 0 &&
-    removedMembers.length === 1 &&
-    addedMembers.length === 0
-  ) {
-    kind = "member_left";
-    actorId = removedMembers[0];
-  } else {
-    kind = "group_changed";
-    actorId = ownerId;
-  }
-
-  await appendRoomEvent(supabase, {
-    roomId: room.id,
-    kind,
-    actorId,
-    itemName: (itemRow?.name ?? "").trim(),
-    units,
-    peopleCount: units === null ? null : participantIds.length,
-  });
-
-  logger.info("claim_updated", { code, itemId, kind, units });
+  logger.info("claim_updated", { code, itemId, units });
   await broadcastRoomUpdate(supabase, code);
   return NextResponse.json(await loadRoomState(supabase, room));
 }

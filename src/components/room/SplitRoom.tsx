@@ -20,17 +20,13 @@ import { backdropVariants, sheetVariants } from "@/lib/motion";
 import { AssignedBar } from "./AssignedBar";
 import { BillProgress, RoomTabs, type RoomTab } from "./BillProgress";
 import { ItemActionSheet } from "./ItemActionSheet";
-import { NotificationBell, type RoomNotification } from "./NotificationBell";
 import { PersonTotals } from "@/components/PersonTotals";
 import { ProfileButton } from "./ProfileButton";
-import { formatUnits, ProductCard } from "./ProductCard";
+import { ProductCard } from "./ProductCard";
 import { ReceiptEditor } from "@/components/ReceiptEditor";
 import type { Messages } from "@/i18n";
-import type { RoomEvent } from "@/lib/rooms/types";
 import {
-  getReadEventIds,
   hasReviewedTicket,
-  markEventsRead,
   markTicketReviewed,
 } from "@/lib/rooms/review-state";
 
@@ -49,7 +45,6 @@ interface SplitRoomProps {
   readonly extras: EditableExtras;
   readonly participants: readonly Participant[];
   readonly claims: LocalClaims;
-  readonly events?: readonly RoomEvent[];
   readonly selfKey: string;
   /** Persists the whole ticket (items + extras) at once, e.g. when the ticket editor is closed. */
   readonly onSaveBill: (
@@ -80,47 +75,6 @@ interface SplitRoomProps {
   readonly messages: Messages;
 }
 
-function toRoomNotification(
-  event: RoomEvent,
-  participants: readonly Participant[],
-  messages: Messages["roomSplit"],
-): RoomNotification {
-  const actor =
-    participants.find((participant) => participant.key === event.actorId)?.name ??
-    event.actorId ??
-    "?";
-  const itemName = event.itemName || messages.unnamedItem;
-
-  const text =
-    event.kind === "group_removed"
-      ? messages.groupRemovedBy
-          .replace("{{actor}}", actor)
-          .replace("{{item}}", itemName)
-      : event.kind === "member_joined"
-        ? messages.groupMemberJoined
-            .replace("{{member}}", actor)
-            .replace("{{item}}", itemName)
-        : event.kind === "member_left"
-          ? messages.groupMemberLeft
-              .replace("{{member}}", actor)
-              .replace("{{item}}", itemName)
-          : messages.groupChangedBy
-              .replace("{{actor}}", actor)
-              .replace("{{item}}", itemName)
-              .replace("{{units}}", formatUnits(event.units ?? 0))
-              .replace("{{people}}", String(event.peopleCount ?? 0));
-
-  return {
-    id: event.id,
-    text,
-    at: event.at,
-    read: false,
-    // Un cambio con más de una persona implicada es un aviso "compartido";
-    // el resto son movimientos privados (para ti).
-    scope: (event.peopleCount ?? 0) > 1 ? "shared" : "personal",
-  };
-}
-
 function roomViewStorageKey(roomCode: string, selfKey: string): string {
   return `reasypt.roomView.${roomCode}.${selfKey}`;
 }
@@ -146,7 +100,6 @@ export function SplitRoom({
   extras,
   participants,
   claims,
-  events = [],
   selfKey,
   onSaveBill,
   onSaveGroup,
@@ -183,10 +136,6 @@ export function SplitRoom({
     extras: EditableExtras;
   } | null>(null);
   const [originalImageOpen, setOriginalImageOpen] = useState(false);
-  const [notifications, setNotifications] = useState<
-    readonly RoomNotification[]
-  >([]);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const viewStorageKey = roomViewStorageKey(roomCode, selfKey);
 
   useEffect(() => {
@@ -310,27 +259,6 @@ export function SplitRoom({
     },
     distributeUnclaimed: true,
   });
-
-  useEffect(() => {
-    // Keeps read/unread flags for already seen events while reflecting
-    // persisted history from the server. Tus propias acciones no generan
-    // aviso: solo interesan los cambios que hacen los demás. El estado de
-    // lectura de cada aviso se guarda por participante en este dispositivo,
-    // para que no reaparezca como no leído en otra visita.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- sincroniza avisos locales con historial remoto persistido
-    setNotifications((previous) => {
-      const previousById = new Map(previous.map((notice) => [notice.id, notice]));
-      const readIds = getReadEventIds(roomCode, selfKey);
-      return events
-        .filter((event) => event.actorId !== selfKey)
-        .map((event) => {
-          const next = toRoomNotification(event, participants, t);
-          const alreadyRead =
-            previousById.get(next.id)?.read ?? readIds.has(next.id);
-          return { ...next, read: alreadyRead };
-        });
-    });
-  }, [events, participants, selfKey, t, roomCode]);
 
   // Anima la etiqueta de la pestaña de destino cuando esta persona mueve un
   // producto: entra a "Compartido" o "Para mí" al reservarlo, y vuelve a
@@ -527,28 +455,7 @@ export function SplitRoom({
                   messages={t}
                 />
               }
-              notifications={
-                <NotificationBell
-                  notifications={notifications}
-                  open={notificationsOpen}
-                  onToggle={() => {
-                    setNotificationsOpen((prev) => !prev);
-                    setNotifications((prev) => {
-                      markEventsRead(
-                        roomCode,
-                        selfKey,
-                        prev.map((notification) => notification.id),
-                      );
-                      return prev.map((notification) => ({
-                        ...notification,
-                        read: true,
-                      }));
-                    });
-                  }}
-                  onClose={() => setNotificationsOpen(false)}
-                  messages={t}
-                />
-              }
+              onOpenAccounts={() => setFinalOpen(true)}
               messages={t}
             />
             <RoomTabs

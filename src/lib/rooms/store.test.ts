@@ -72,18 +72,6 @@ describe("findRoom", () => {
           };
         }
 
-        if (table === "room_events") {
-          return {
-            select: () => ({
-              eq: () => ({
-                order: () => ({
-                  limit: async () => ({ data: [], error: null }),
-                }),
-              }),
-            }),
-          };
-        }
-
         return {
           select: () => ({
             eq: async () => ({ data: [], error: null }),

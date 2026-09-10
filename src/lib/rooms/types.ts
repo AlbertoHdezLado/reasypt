@@ -21,17 +21,6 @@ export interface RoomClaim {
   readonly groupIds: readonly string[];
 }
 
-export interface RoomEvent {
-  readonly id: string;
-  readonly kind: "group_changed" | "group_removed" | "member_joined" | "member_left";
-  /** For member_joined/member_left, the participant who joined or left. */
-  readonly actorId: string | null;
-  readonly itemName: string;
-  readonly units: number | null;
-  readonly peopleCount: number | null;
-  readonly at: number;
-}
-
 export interface RoomState {
   readonly code: string;
   readonly receiptImageUrl: string | null;
@@ -39,5 +28,4 @@ export interface RoomState {
   readonly items: EditableItem[];
   readonly extras: EditableExtras;
   readonly claims: RoomClaim[];
-  readonly events?: RoomEvent[];
 }

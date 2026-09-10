@@ -7,7 +7,7 @@ import {
 import { EMPTY_EXTRAS } from "@/lib/receipt/editable";
 import { logger } from "@/lib/logger";
 import { normalizeRoomCode } from "./code";
-import type { RoomEvent, RoomState } from "./types";
+import type { RoomState } from "./types";
 
 interface RoomRow {
   id: string;
@@ -33,35 +33,12 @@ interface ClaimRow {
   all_participants?: boolean | null;
 }
 
-interface RoomEventRow {
-  id: string;
-  kind: RoomEvent["kind"];
-  actor_id: string | null;
-  item_name: string;
-  units: number | string | null;
-  people_count: number | null;
-  created_at: string;
-}
-
 function isMissingColumnError(error: { code?: string; message?: string } | null) {
   return (
     // 42703: Postgres undefined_column. PGRST204: PostgREST's schema cache
     // hasn't picked up the column yet (e.g. right after a migration).
     (error?.code === "42703" || error?.code === "PGRST204") &&
     /(merchant_name|receipt_header|receipt_image_url|group_key|shared|all_participants)/.test(
-      error.message ?? "",
-    )
-  );
-}
-
-function isMissingEventsSchemaError(
-  error: { code?: string; message?: string } | null,
-): boolean {
-  return (
-    (error?.code === "42P01" ||
-      error?.code === "42703" ||
-      error?.code === "PGRST204") &&
-    /room_events|kind|actor_id|item_name|units|people_count|created_at/.test(
       error.message ?? "",
     )
   );
@@ -119,18 +96,7 @@ export async function loadRoomState(
       error: { code?: string; message?: string } | null;
     }>;
 
-  const selectEvents = () =>
-    supabase
-      .from("room_events")
-      .select("id, kind, actor_id, item_name, units, people_count, created_at")
-      .eq("room_id", room.id)
-      .order("created_at", { ascending: false })
-      .limit(100) as unknown as PromiseLike<{
-      data: RoomEventRow[] | null;
-      error: { code?: string; message?: string } | null;
-    }>;
-
-  const [participants, items, claimsWithKey, eventsResult] = await Promise.all([
+  const [participants, items, claimsWithKey] = await Promise.all([
     supabase
       .from("participants")
       .select("id, name, is_owner")
@@ -142,18 +108,13 @@ export async function loadRoomState(
       .eq("room_id", room.id)
       .order("position", { ascending: true }),
     selectClaims(true),
-    selectEvents(),
   ]);
 
   const claims = isMissingColumnError(claimsWithKey.error)
     ? await selectClaims(false)
     : claimsWithKey;
 
-  const events = isMissingEventsSchemaError(eventsResult.error)
-    ? { data: [] as RoomEventRow[], error: null }
-    : eventsResult;
-
-  const failure = participants.error ?? items.error ?? claims.error ?? events.error;
+  const failure = participants.error ?? items.error ?? claims.error;
   if (failure) throw new Error(failure.message);
 
   return {
@@ -197,45 +158,7 @@ export async function loadRoomState(
       units: Number(row.units),
       groupIds: row.group_ids ?? [],
     })),
-    events: (events.data ?? []).map((event) => ({
-      id: event.id,
-      kind: event.kind,
-      actorId: event.actor_id,
-      itemName: event.item_name,
-      units:
-        event.units === null || event.units === undefined
-          ? null
-          : Number(event.units),
-      peopleCount: event.people_count,
-      at: Date.parse(event.created_at),
-    })),
   };
-}
-
-interface AppendRoomEventInput {
-  readonly roomId: string;
-  readonly kind: RoomEvent["kind"];
-  readonly actorId: string | null;
-  readonly itemName: string;
-  readonly units: number | null;
-  readonly peopleCount: number | null;
-}
-
-export async function appendRoomEvent(
-  supabase: SupabaseClient,
-  event: AppendRoomEventInput,
-): Promise<void> {
-  const { error } = await supabase.from("room_events").insert({
-    room_id: event.roomId,
-    kind: event.kind,
-    actor_id: event.actorId,
-    item_name: event.itemName,
-    units: event.units,
-    people_count: event.peopleCount,
-  });
-
-  if (!error || isMissingEventsSchemaError(error)) return;
-  logger.warn("room_event_persist_failed", { error: error.message, kind: event.kind });
 }
 
 /**

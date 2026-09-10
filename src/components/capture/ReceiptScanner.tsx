@@ -44,12 +44,6 @@ export function ReceiptScanner({
 
   useEffect(() => {
     return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
-
-  useEffect(() => {
-    return () => {
       if (progressTimerRef.current) clearInterval(progressTimerRef.current);
       if (messageTimerRef.current) clearInterval(messageTimerRef.current);
     };
@@ -83,12 +77,15 @@ export function ReceiptScanner({
   }
 
   function handleFileSelected(file: File) {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(URL.createObjectURL(file));
+    // Some formats (e.g. HEIC/HEIF) can't be rendered directly via an object
+    // URL, so route the scan overlay preview through the same decoder used
+    // for the stored copy instead of assuming the raw file is displayable.
+    setPreviewUrl(null);
+    void fileToPreviewDataUrl(file).then((dataUrl) => {
+      setPreviewUrl(dataUrl);
+      onImageCaptured?.(dataUrl);
+    }).catch(() => {});
     setScanError(null);
-    if (onImageCaptured) {
-      void fileToPreviewDataUrl(file).then(onImageCaptured).catch(() => {});
-    }
     void scan(file);
   }
 

@@ -67,7 +67,7 @@ export function ScanOverlay({
             animate={{
               width: `${Math.round(progress)}%`,
             }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           />
         </div>
       </motion.div>

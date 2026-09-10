@@ -24,8 +24,8 @@ interface ReceiptScannerProps {
 // timing: fast at first, then slower as it approaches the cap, so it never
 // looks stuck while waiting on the server/Gemini.
 const FAKE_PROGRESS_CAP = 95;
-const FAKE_PROGRESS_INTERVAL_MS = 300;
-const FAKE_PROGRESS_STEP_RATIO = 0.05;
+const FAKE_PROGRESS_INTERVAL_MS = 450;
+const FAKE_PROGRESS_STEP_RATIO = 0.035;
 const MESSAGE_INTERVAL_MS = 3000;
 
 export function ReceiptScanner({

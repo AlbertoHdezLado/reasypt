@@ -24,6 +24,7 @@ import { PersonTotals } from "@/components/PersonTotals";
 import { ProfileButton } from "./ProfileButton";
 import { ProductCard } from "./ProductCard";
 import { ReceiptEditor } from "@/components/ReceiptEditor";
+import { Spinner } from "@/components/Spinner";
 import type { Messages } from "@/i18n";
 import {
   hasReviewedTicket,
@@ -136,6 +137,7 @@ export function SplitRoom({
     extras: EditableExtras;
   } | null>(null);
   const [originalImageOpen, setOriginalImageOpen] = useState(false);
+  const [originalImageLoading, setOriginalImageLoading] = useState(false);
   const viewStorageKey = roomViewStorageKey(roomCode, selfKey);
 
   useEffect(() => {
@@ -692,7 +694,10 @@ export function SplitRoom({
                 {receiptImageUrl && (
                   <button
                     type="button"
-                    onClick={() => setOriginalImageOpen(true)}
+                    onClick={() => {
+                      setOriginalImageLoading(true);
+                      setOriginalImageOpen(true);
+                    }}
                     className="flex-1 rounded-full border border-primary px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10"
                   >
                     {t.viewOriginalTicket}
@@ -731,12 +736,14 @@ export function SplitRoom({
               exit="exit"
               className="relative flex max-h-[85vh] w-full max-w-md flex-col gap-3 overflow-hidden rounded-2xl border border-primary/40 bg-background p-3 shadow-2xl"
             >
-              <div className="min-h-0 flex-1 overflow-y-auto">
+              <div className="relative flex min-h-[12rem] min-w-0 flex-1 items-center justify-center overflow-y-auto">
+                {originalImageLoading && <Spinner size={32} className="text-primary" />}
                 {/* eslint-disable-next-line @next/next/no-img-element -- data URL, not an optimizable remote image */}
                 <img
                   src={receiptImageUrl}
                   alt={t.viewOriginalTicket}
-                  className="w-full rounded-lg object-contain"
+                  onLoad={() => setOriginalImageLoading(false)}
+                  className={`w-full rounded-lg object-contain transition-opacity ${originalImageLoading ? "opacity-0" : "opacity-100"}`}
                 />
               </div>
               <button

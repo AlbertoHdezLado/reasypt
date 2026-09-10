@@ -27,6 +27,10 @@ describe("ReceiptEditor", () => {
 
     expect(screen.getByText("5,00 €")).toBeTruthy();
     expect(screen.getByRole("status").textContent).toMatch(/5,00 €|5,00/);
+    expect(screen.queryByText(/^iva$/i)).toBeNull();
+    expect(screen.queryByText(/^propina$/i)).toBeNull();
+    expect(screen.queryByText(/^servicio$/i)).toBeNull();
+    expect(screen.queryByText(/^descuento$/i)).toBeNull();
   });
 
   it("allows correcting the detected receipt total", () => {

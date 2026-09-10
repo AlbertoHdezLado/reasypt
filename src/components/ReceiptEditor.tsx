@@ -75,34 +75,6 @@ export function ReceiptEditor({
   }, []);
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const extraFieldRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const extraFields: ReadonlyArray<{
-    readonly label: string;
-    readonly cents: number;
-    readonly onChange: (cents: number) => void;
-  }> = [
-    {
-      label: messages.tax,
-      cents: extras.taxCents,
-      onChange: (cents) => onExtrasChange({ ...extras, taxCents: cents }),
-    },
-    {
-      label: messages.tip,
-      cents: extras.tipCents,
-      onChange: (cents) => onExtrasChange({ ...extras, tipCents: cents }),
-    },
-    {
-      label: messages.service,
-      cents: extras.serviceCents,
-      onChange: (cents) => onExtrasChange({ ...extras, serviceCents: cents }),
-    },
-    {
-      label: messages.discount,
-      cents: extras.discountCents,
-      onChange: (cents) =>
-        onExtrasChange({ ...extras, discountCents: cents }),
-    },
-  ];
 
   function updateItem(index: number, next: EditableItem) {
     onItemsChange(items.map((item, i) => (i === index ? next : item)));
@@ -167,9 +139,9 @@ export function ReceiptEditor({
   }, []);
 
   return (
-    <div className="flex flex-col gap-1 text-[13px]">
-      <div className="ticket-paper mx-auto w-full max-w-md px-4 pb-6 pt-5 shadow-lg">
-        <div className="pb-3 text-center font-mono text-[11px] uppercase">
+    <div className="flex flex-col gap-1 text-base">
+      <div className="ticket-paper mx-auto w-full max-w-lg px-5 pb-7 pt-6 shadow-lg">
+        <div className="pb-4 text-center font-mono text-sm uppercase">
           <input
             type="text"
             value={merchantDraft}
@@ -186,7 +158,7 @@ export function ReceiptEditor({
               }
             }}
             placeholder={messages.merchantNamePlaceholder}
-            className="w-full border-b border-dashed border-primary/35 bg-transparent px-1 py-1 text-center font-mono text-sm font-semibold uppercase outline-none placeholder:font-sans placeholder:font-normal placeholder:normal-case placeholder:text-muted-foreground/70 focus:border-primary"
+            className="w-full border-b border-dashed border-primary/35 bg-transparent px-1 py-2 text-center font-mono text-xl font-bold uppercase outline-none placeholder:font-sans placeholder:text-base placeholder:font-normal placeholder:normal-case placeholder:text-muted-foreground/70 focus:border-primary"
           />
           {extras.receiptHeader.slice(1).map((line, index) => (
             <p key={`${line}-${index}`} className="mt-1 leading-5">
@@ -209,30 +181,13 @@ export function ReceiptEditor({
         <button
           type="button"
           onClick={addItem}
-          className="mt-1 flex items-center justify-center gap-1 rounded border border-dashed border-primary/50 py-1.5 text-xs text-primary hover:border-primary hover:bg-primary/10"
+          className="mt-2 flex items-center justify-center gap-1 rounded border border-dashed border-primary/50 py-2 text-sm font-medium text-primary hover:border-primary hover:bg-primary/10"
         >
           + {messages.addProduct}
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-y-0.5 border-b border-dashed border-primary/35 py-3 text-[12px] sm:grid-cols-2 sm:gap-x-4 sm:gap-y-1">
-        {extraFields.map(({ label, cents, onChange }, index) => (
-          <ExtraField
-            key={label}
-            label={label}
-            cents={cents}
-            onChange={onChange}
-            inputRef={(element) => {
-              extraFieldRefs.current[index] = element;
-            }}
-            onEnter={() => {
-              extraFieldRefs.current[index + 1]?.focus();
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="flex flex-col gap-0.5 border-b border-dashed border-primary/35 pb-2 pt-3 text-[12px]">
+      <div className="flex flex-col gap-1 border-b border-dashed border-primary/35 pb-3 pt-4 text-sm">
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">
             {messages.subtotalProducts}
@@ -253,7 +208,7 @@ export function ReceiptEditor({
         </div>
         <div
           ref={totalRowRef}
-          className="flex items-center justify-between border-t-2 border-primary/50 px-1 py-3 font-semibold"
+          className="flex items-center justify-between border-t-2 border-primary/50 px-1 py-4 text-lg font-bold"
         >
           <span>Total</span>
           <TotalField
@@ -316,43 +271,6 @@ export function ReceiptEditor({
         </div>
       )}
     </div>
-  );
-}
-
-function ExtraField({
-  label,
-  cents,
-  onChange,
-  inputRef,
-  onEnter,
-}: {
-  readonly label: string;
-  readonly cents: number;
-  readonly onChange: (cents: number) => void;
-  readonly inputRef: (element: HTMLInputElement | null) => void;
-  readonly onEnter: () => void;
-}) {
-  const field = useMoneyField(cents, onChange);
-  return (
-    <label className="flex min-w-0 items-center justify-between gap-2 py-1">
-      <span className="truncate text-xs font-semibold uppercase text-muted-foreground">
-        {label}
-      </span>
-      <input
-        ref={inputRef}
-        type="text"
-        inputMode="decimal"
-        {...field}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            event.currentTarget.blur();
-            onEnter();
-          }
-        }}
-        className="w-20 shrink-0 rounded border border-border bg-transparent px-2 py-1 text-right"
-      />
-    </label>
   );
 }
 

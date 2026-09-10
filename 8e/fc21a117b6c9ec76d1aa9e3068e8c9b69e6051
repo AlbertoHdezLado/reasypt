@@ -1,0 +1,18 @@
+src/components/capture/ReceiptScanner.tsx
+  h_fed6a40af368f7 27-28
+src/components/capture/ScanOverlay.tsx
+  h_fed6a40af368f7 70
+src/components/room/SplitRoom.tsx
+  h_fed6a40af368f7 27,140,697-700,739-740,745-746
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "8efc21a117b6c9ec76d1aa9e3068e8c9b69e6051",
+  "prompts": {},
+  "humans": {
+    "h_fed6a40af368f7": {
+      "author": "Alberto Hernández Lado <albertohljob@gmail.com>"
+    }
+  }
+}

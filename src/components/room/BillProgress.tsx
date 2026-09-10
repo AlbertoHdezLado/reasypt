@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { Receipt, Share2 } from "lucide-react";
+import { Receipt, Share2, UsersRound } from "lucide-react";
 import { formatCents } from "@/lib/money";
 import { backdropVariants, sheetVariants } from "@/lib/motion";
 import type { Messages } from "@/i18n";
@@ -69,7 +69,7 @@ export function BillProgress({
               title={messages.viewAccounts}
               className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary text-primary hover:bg-primary/10"
             >
-              <Receipt aria-hidden="true" size={16} />
+              <UsersRound aria-hidden="true" size={16} />
             </button>
           )}
         </div>

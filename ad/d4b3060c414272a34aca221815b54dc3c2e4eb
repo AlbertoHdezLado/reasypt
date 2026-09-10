@@ -1,0 +1,26 @@
+src/app/api/rooms/[code]/receipt-image/route.ts
+  h_fed6a40af368f7 1-63
+src/components/room/RoomFlow.tsx
+  h_fed6a40af368f7 18,77-79,333-335,423
+src/components/room/RoomHome.tsx
+  h_fed6a40af368f7 108,112,122
+src/lib/rooms/api.ts
+  h_fed6a40af368f7 48-63
+src/lib/rooms/store.ts
+  h_fed6a40af368f7 22,51,81,98,161
+src/lib/rooms/types.ts
+  h_fed6a40af368f7 37
+supabase/migrations/0009_receipt_image.sql
+  h_fed6a40af368f7 1-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "add4b3060c414272a34aca221815b54dc3c2e4eb",
+  "prompts": {},
+  "humans": {
+    "h_fed6a40af368f7": {
+      "author": "Alberto Hernández Lado <albertohljob@gmail.com>"
+    }
+  }
+}

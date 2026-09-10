@@ -100,7 +100,9 @@ describe("SplitRoom", () => {
     fireEvent.click(screen.getByText("CERVEZA"));
 
     expect(screen.getByRole("button", { name: "Para mí" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Share with..." })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: defaultMessages.roomSplit.shareUnits }),
+    ).toBeTruthy();
   });
 
   it("lists the shared groups of a product on the shared tab", () => {
@@ -311,7 +313,9 @@ describe("SplitRoom", () => {
     const { onSaveGroup } = renderBoard();
 
     fireEvent.click(screen.getByText("CERVEZA"));
-    fireEvent.click(screen.getByRole("button", { name: "Share with..." }));
+    fireEvent.click(
+      screen.getByRole("button", { name: defaultMessages.roomSplit.shareUnits }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "Toda la sala" }));
 
     expect(onSaveGroup).toHaveBeenCalledWith(
@@ -343,7 +347,9 @@ describe("SplitRoom", () => {
       screen.queryByRole("button", { name: "Unirse a grupo existente" }),
     ).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Share with..." }));
+    fireEvent.click(
+      screen.getByRole("button", { name: defaultMessages.roomSplit.shareUnits }),
+    );
     fireEvent.click(
       screen.getByRole("button", { name: "Unirse a grupo existente" }),
     );

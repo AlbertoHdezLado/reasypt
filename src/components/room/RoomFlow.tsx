@@ -133,7 +133,7 @@ export function RoomFlow({ code, messages }: RoomFlowProps) {
       })
       .catch(() => {
         hasAutoSavedDraft.current = false;
-        setActionError("Error al guardar");
+        setActionError(t.saveError);
       })
       .finally(() => setSavingBill(false));
   }, [draft, room, code]);

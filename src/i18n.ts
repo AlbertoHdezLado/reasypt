@@ -196,7 +196,7 @@ export const messages = {
       nothingShared: "Nadie ha compartido nada todavía.",
       sharedGroupsTitle: "Grupos compartidos",
       myGroupsTitle: "Lo que has cogido",
-      shareUnits: "Share with...",
+      shareUnits: "Compartir con...",
       joinExistingGroup: "Unirse a grupo existente",
       chooseGroupTitle: "Elige el grupo al que unirte",
       groupsTitle: "Grupos",

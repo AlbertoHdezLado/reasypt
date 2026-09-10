@@ -133,6 +133,34 @@ describe("SplitRoom", () => {
     );
   });
 
+  it("shows a pencil icon in the edit button for a shared group", () => {
+    renderBoard({
+      p1: {
+        i1: [
+          {
+            owner: "p1",
+            shared: true,
+            choice: { mode: "units", count: 1, group: ["p1", "p2"] },
+          },
+        ],
+      },
+      p2: {
+        i1: [
+          {
+            owner: "p1",
+            shared: true,
+            choice: { mode: "units", count: 1, group: ["p1", "p2"] },
+          },
+        ],
+      },
+    });
+
+    fireEvent.click(screen.getByRole("tab", { name: "Compartido" }));
+
+    const editButton = screen.getByRole("button", { name: "Editar" });
+    expect(editButton.querySelector("svg")).not.toBeNull();
+  });
+
   it("keeps private groups out of the shared tab", () => {
     renderBoard({
       p2: {
@@ -243,9 +271,9 @@ describe("SplitRoom", () => {
 
     fireEvent.click(screen.getByText(defaultMessages.roomSplit.yourTotal));
 
-    expect(document.body.textContent).toMatch(/Subtotal de tus productos/);
-    expect(document.body.textContent).toMatch(/PRODUCTOS NO ASIGNADOS/);
-    expect(document.body.textContent).toMatch(/TORTILLA/);
+    expect(document.body.textContent).toMatch(/De dónde sale tu total/);
+    expect(document.body.textContent).toMatch(/Resto de la sala/);
+    expect(document.body.textContent).toMatch(/LUIS/);
   });
 
   it("shows the unassigned split inside its expanded breakdown", () => {
@@ -404,7 +432,7 @@ describe("SplitRoom", () => {
     });
 
     fireEvent.click(screen.getByRole("tab", { name: "Para mí" }));
-    fireEvent.click(screen.getByText("CERVEZA"));
+    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
     fireEvent.click(screen.getByRole("button", { name: "+" }));
     fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
 
@@ -466,7 +494,6 @@ describe("SplitRoom", () => {
   it("keeps the group's total units so the rest absorb the leaving member's share", () => {
     const shared = {
       owner: "p1",
-      shared: true,
       choice: { mode: "units" as const, count: 2, group: ["p1", "p2"] },
     };
     const { onSaveGroup } = renderBoard({
@@ -475,8 +502,9 @@ describe("SplitRoom", () => {
     });
 
     fireEvent.click(screen.getByRole("tab", { name: "Compartido" }));
-    fireEvent.click(screen.getByText("CERVEZA"));
-    fireEvent.click(screen.getByRole("button", { name: "Salir" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Quitar mi selección" }),
+    );
 
     expect(onSaveGroup).toHaveBeenCalledWith(
       "i1",
@@ -502,8 +530,9 @@ describe("SplitRoom", () => {
     });
 
     fireEvent.click(screen.getByRole("tab", { name: "Para mí" }));
-    fireEvent.click(screen.getByText("CERVEZA"));
-    fireEvent.click(screen.getByRole("button", { name: "Quitar" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Quitar mi selección" }),
+    );
 
     expect(onSaveGroup).toHaveBeenCalledWith(
       "i1",
@@ -515,15 +544,42 @@ describe("SplitRoom", () => {
     );
   });
 
-  it("opens room accounts breakdown dialog when clicking the accounts button", () => {
-    renderBoard({
-      p1: { i2: [{ owner: "p1", choice: { mode: "units", count: 1 } }] },
-    });
+  it("alerts the rest of the group when someone else changes it", () => {
+    const before = {
+      owner: "p2",
+      choice: { mode: "units" as const, count: 2, group: ["p1", "p2"] },
+    };
+    const { rerender } = renderTree({ p1: { i1: [before] }, p2: { i1: [before] } });
 
-    fireEvent.click(screen.getByRole("button", { name: "Cuentas de la sala" }));
+    const after = {
+      owner: "p2",
+      choice: { mode: "units" as const, count: 4, group: ["p1", "p2"] },
+    };
+    rerender({ p1: { i1: [after] }, p2: { i1: [after] } });
 
-    expect(screen.getByText("Reparto final")).toBeTruthy();
-    expect(screen.getAllByText(/ANA/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/LUIS/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: "Avisos, 1 sin leer" }));
+
+    expect(screen.getByRole("alert").textContent).toMatch(
+      /CERVEZA: el grupo pasa a 4 uds\. entre 2 personas\./,
+    );
   });
 });
+
+function renderTree(claims: LocalClaims) {
+  const roomView = (next: LocalClaims) => (
+    <SplitRoom
+      items={items}
+      extras={EMPTY_EXTRAS}
+      participants={participants}
+      claims={next}
+      selfKey="p1"
+      onSaveBill={vi.fn()}
+      onSaveGroup={vi.fn()}
+      roomCode="AB12CD"
+      onToggleShare={vi.fn()}
+      messages={defaultMessages}
+    />
+  );
+  const view = render(roomView(claims));
+  return { rerender: (next: LocalClaims) => view.rerender(roomView(next)) };
+}

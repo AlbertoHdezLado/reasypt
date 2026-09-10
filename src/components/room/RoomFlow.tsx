@@ -415,6 +415,7 @@ export function RoomFlow({ code, messages }: RoomFlowProps) {
         extras={room.extras}
         participants={participants}
         claims={claims}
+        events={room.events ?? []}
         selfKey={self.id}
         roomCode={room.code}
         onToggleShare={() => setShowShare((prev) => !prev)}

@@ -46,7 +46,7 @@ export function ShareRoom({ code, messages }: ShareRoomProps) {
         <img
           src={qr}
           alt={messages.qrAlt}
-          className="h-64 w-64 rounded-xl border border-primary/30 bg-paper p-2"
+          className="h-auto w-full max-w-[320px] rounded-xl border border-primary/30 bg-paper p-2"
         />
       )}
 

@@ -87,25 +87,25 @@ export function ItemRow({
   };
 
   const line = (
-    <div className="flex items-center gap-3 py-3 text-base">
-      <span className="w-10 shrink-0 text-center font-mono text-muted-foreground">
-          {item.quantity}
-        </span>
-        <span className="min-w-0 flex-1 overflow-hidden font-mono font-semibold uppercase leading-snug [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">
-          {item.name || messages.descriptionPlaceholder}
-        </span>
-        <span className="shrink-0 font-mono text-lg font-semibold tabular-nums">
-          {formatCents(itemTotalCents(item))}
-        </span>
-        <button
-          type="button"
-          onClick={openEditor}
-          aria-label={`${messages.editLine} ${item.name || messages.descriptionPlaceholder}`}
-          title={`${messages.editLine} ${item.name || messages.descriptionPlaceholder}`}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-primary/30 text-primary hover:bg-primary/10"
-        >
-          <Pencil aria-hidden="true" size={14} />
-        </button>
+    <div className="flex items-center gap-2 py-2 text-sm">
+      <span className="w-8 shrink-0 text-center font-mono text-[11px] text-muted-foreground">
+        {item.quantity}
+      </span>
+      <span className="min-w-0 flex-1 overflow-hidden font-mono text-[11px] font-semibold uppercase leading-snug [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">
+        {item.name || messages.descriptionPlaceholder}
+      </span>
+      <span className="shrink-0 font-mono text-sm font-semibold tabular-nums">
+        {formatCents(itemTotalCents(item))}
+      </span>
+      <button
+        type="button"
+        onClick={openEditor}
+        aria-label={`${messages.editLine} ${item.name || messages.descriptionPlaceholder}`}
+        title={`${messages.editLine} ${item.name || messages.descriptionPlaceholder}`}
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-primary/30 text-primary hover:bg-primary/10"
+      >
+        <Pencil aria-hidden="true" size={12} />
+      </button>
     </div>
   );
 

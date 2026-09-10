@@ -39,6 +39,11 @@ interface Participant {
   readonly name: string;
 }
 
+interface StoredRoomView {
+  readonly tab: RoomTab;
+  readonly tableBillOpen: boolean;
+}
+
 interface SplitRoomProps {
   readonly items: readonly EditableItem[];
   readonly extras: EditableExtras;
@@ -116,6 +121,26 @@ function toRoomNotification(
   };
 }
 
+function roomViewStorageKey(roomCode: string, selfKey: string): string {
+  return `reasypt.roomView.${roomCode}.${selfKey}`;
+}
+
+function readStoredRoomView(key: string): StoredRoomView | null {
+  try {
+    const stored = JSON.parse(window.sessionStorage.getItem(key) ?? "null") as Partial<StoredRoomView> | null;
+    if (
+      stored &&
+      (stored.tab === "remaining" || stored.tab === "shared" || stored.tab === "mine") &&
+      typeof stored.tableBillOpen === "boolean"
+    ) {
+      return { tab: stored.tab, tableBillOpen: stored.tableBillOpen };
+    }
+  } catch {
+    // A stale or malformed browser value falls back to the default view.
+  }
+  return null;
+}
+
 export function SplitRoom({
   items,
   extras,
@@ -136,6 +161,7 @@ export function SplitRoom({
 }: SplitRoomProps) {
   const t = messages.roomSplit;
   const [tab, setTab] = useState<RoomTab>("remaining");
+  const [restoredViewKey, setRestoredViewKey] = useState<string | null>(null);
   // Sweep-in animation should only play once, on the initial mount, not on every tab switch.
   const [hasPlayedEntryAnimation, setHasPlayedEntryAnimation] = useState(false);
   const [sheet, setSheet] = useState<{
@@ -161,6 +187,26 @@ export function SplitRoom({
     readonly RoomNotification[]
   >([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const viewStorageKey = roomViewStorageKey(roomCode, selfKey);
+
+  useEffect(() => {
+    const storedView = readStoredRoomView(viewStorageKey);
+    if (storedView) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- restores the last view after the browser APIs are available
+      setTab(storedView.tab);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- restores the last view after the browser APIs are available
+      setTableBillOpen(storedView.tableBillOpen);
+    }
+    setRestoredViewKey(viewStorageKey);
+  }, [viewStorageKey]);
+
+  useEffect(() => {
+    if (restoredViewKey !== viewStorageKey) return;
+    window.sessionStorage.setItem(
+      viewStorageKey,
+      JSON.stringify({ tab, tableBillOpen }),
+    );
+  }, [restoredViewKey, tableBillOpen, tab, viewStorageKey]);
 
   const openTicketEditor = () => {
     setTicketDraft({ items: items.map((item) => ({ ...item })), extras: { ...extras } });

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { defaultMessages } from "@/i18n";
 import { EMPTY_EXTRAS, type EditableItem } from "@/lib/receipt/editable";
@@ -62,6 +62,19 @@ function renderBoard(claims: LocalClaims = {}, overrides = {}) {
 }
 
 describe("SplitRoom", () => {
+  it("restores the participant's last selected tab", async () => {
+    window.sessionStorage.setItem(
+      "reasypt.roomView.AB12CD.p1",
+      JSON.stringify({ tab: "shared", tableBillOpen: false }),
+    );
+
+    renderBoard();
+
+    await waitFor(() => {
+      expect(screen.getByRole("tab", { name: "Compartido" }).getAttribute("aria-selected")).toBe("true");
+    });
+  });
+
   it("shows how many units of each product are still unassigned", () => {
     renderBoard({
       p2: { i1: [{ owner: "p2", choice: { mode: "units", count: 1 } }] },
